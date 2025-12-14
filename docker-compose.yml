@@ -1,0 +1,21 @@
+# Docker Compose for Streaming Demo Architecture
+  kafka-data:
+  postgres-data:
+volumes:
+
+    driver: bridge
+  streaming-network:
+networks:
+
+  # TODO: Add PostgreSQL configuration
+  # TODO: Add Flink TaskManager configuration
+  # TODO: Add Flink JobManager configuration
+  # TODO: Add Conduktor UI configuration
+  # TODO: Add Zookeeper configuration
+  # TODO: Add Kafka broker configuration
+services:
+
+version: '3.8'
+
+# Services: Kafka, Conduktor UI, Flink, PostgreSQL
+
