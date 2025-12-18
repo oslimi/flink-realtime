@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.wslimi.streaming</groupId>
+    <groupId>com.wslimi.demo</groupId>
     <artifactId>streaming</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -12,8 +12,7 @@
     <name>Flink Streaming Jobs</name>
 
     <modules>
-        <module>domain</module>
-        <module>processor</module>
+        <module>fraud-detection</module>
     </modules>
 
     <properties>
@@ -24,6 +23,7 @@
 
         <!-- Flink -->
         <flink.version>1.20.0</flink.version>
+        <flink.kafka.connector.version>3.3.0-1.20</flink.kafka.connector.version>
 
         <!-- Logging -->
         <log4j.version>2.17.1</log4j.version>
@@ -45,13 +45,11 @@
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-streaming-java</artifactId>
                 <version>${flink.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-clients</artifactId>
                 <version>${flink.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
@@ -61,7 +59,12 @@
             <dependency>
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-connector-kafka</artifactId>
-                <version>3.2.0-1.19</version>
+                <version>${flink.kafka.connector.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-connector-base</artifactId>
+                <version>${flink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
@@ -87,7 +90,6 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
-                <scope>provided</scope>
             </dependency>
 
             <!-- Logging -->
