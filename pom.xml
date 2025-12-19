@@ -24,6 +24,10 @@
         <!-- Flink -->
         <flink.version>1.20.0</flink.version>
         <flink.kafka.connector.version>3.3.0-1.20</flink.kafka.connector.version>
+        <flink.jdbc.connector.version>3.3.0-1.20</flink.jdbc.connector.version>
+
+        <!-- PosgtgreSQL -->
+        <postgresql.version>42.7.3</postgresql.version>
 
         <!-- Logging -->
         <log4j.version>2.17.1</log4j.version>
@@ -68,6 +72,17 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
+                <artifactId>flink-connector-jdbc</artifactId>
+                <version>${flink.jdbc.connector.version}</version>
+            </dependency>
+            <!-- Flink Runtime Web UI (for local development) -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-runtime-web</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
                 <artifactId>flink-test-utils</artifactId>
                 <version>${flink.version}</version>
                 <scope>test</scope>
@@ -83,6 +98,13 @@
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+
+            <!-- PostgreSQL -->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
             </dependency>
 
             <!-- Lombok -->
