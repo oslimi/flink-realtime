@@ -20,20 +20,11 @@ Features:
 - Fraud detection (same as previous demo)
 - Periodic reports every 60 seconds aggregating all alerts
 """
-import sys
-import os
 import logging
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.datastream.connectors.kafka import (
     KafkaSource,
-    KafkaSink,
-    KafkaRecordSerializationSchema,
-    KafkaOffsetsInitializer,
-    DeliveryGuarantee
+    KafkaOffsetsInitializer
 )
 from pyflink.common.watermark_strategy import WatermarkStrategy
 from pyflink.common.serialization import SimpleStringSchema
@@ -106,12 +97,13 @@ def main():
     logger.info(f"Alerts: {FRAUD_ALERTS_TOPIC}")
     logger.info(f"Reports: {FRAUD_REPORTS_TOPIC} (every 60 seconds)")
     logger.info("Test pattern:")
-    logger.info('1) {"transactionId":"tx-001","srcAccountId":"acc-123","destAccountId":"acc-456","amount":50.0,"currency":"EUR","eventTime":1702900000000}')
-    logger.info('2) {"transactionId":"tx-002","srcAccountId":"acc-123","destAccountId":"acc-789","amount":75000.0,"currency":"EUR","eventTime":1702900001000}')
+    logger.info(
+        '1) {"transactionId":"tx-001","srcAccountId":"acc-123","destAccountId":"acc-456","amount":50.0,"currency":"EUR","eventTime":1702900000000}')
+    logger.info(
+        '2) {"transactionId":"tx-002","srcAccountId":"acc-123","destAccountId":"acc-789","amount":75000.0,"currency":"EUR","eventTime":1702900001000}')
     logger.info("Wait 60 seconds to see the report...")
     env.execute("Timer Reporting Demo")
 
 
 if __name__ == "__main__":
     main()
-

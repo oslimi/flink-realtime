@@ -50,7 +50,7 @@ public class StatefulFraudDetectionDemo {
 
         // 1. Create environment
         Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8082);
+        config.set(RestOptions.PORT, 8083);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
         env.setParallelism(2);
 
@@ -62,7 +62,7 @@ public class StatefulFraudDetectionDemo {
         KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
                 .setBootstrapServers(KAFKA_BOOTSTRAP)
                 .setTopics(TRANSACTIONS_TOPIC)
-                .setGroupId("stateful-fraud-detection-demo")
+                .setGroupId("java-stateful-fraud-detection-demo")
                 .setStartingOffsets(OffsetsInitializer.earliest())
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
@@ -104,7 +104,7 @@ public class StatefulFraudDetectionDemo {
         log.info("Test pattern - send these two messages for same account:");
         log.info("1) Small: {\"transactionId\":\"tx-001\",\"srcAccountId\":\"acc-123\",\"destAccountId\":\"acc-456\",\"amount\":50.0,\"currency\":\"EUR\",\"eventTime\":1702900000000}");
         log.info("2) Large: {\"transactionId\":\"tx-002\",\"srcAccountId\":\"acc-123\",\"destAccountId\":\"acc-789\",\"amount\":75000.0,\"currency\":\"EUR\",\"eventTime\":1702900001000}");
-        env.execute("Stateful Fraud Detection Demo");
+        env.execute("[JAVA] Stateful Fraud Detection Demo");
     }
 }
 

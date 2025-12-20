@@ -19,26 +19,16 @@ Fraud Rule: Small transaction (< 100) followed by large transaction (> 50,000)
 
 This pattern detects when attackers test with small amounts before draining.
 """
-import sys
-import os
 import logging
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.common import Types
+from pyflink.common.serialization import SimpleStringSchema
+from pyflink.common.watermark_strategy import WatermarkStrategy
 from pyflink.datastream.connectors.kafka import (
     KafkaSource,
-    KafkaSink,
-    KafkaRecordSerializationSchema,
-    KafkaOffsetsInitializer,
-    DeliveryGuarantee
+    KafkaOffsetsInitializer, KafkaSink, KafkaRecordSerializationSchema
 )
-from pyflink.common.watermark_strategy import WatermarkStrategy
-from pyflink.common.serialization import SimpleStringSchema
 
-from model.transaction import Transaction
-from processor.advanced_stateful_fraud_detection_processor import AdvancedStatefulFraudDetectionProcessor
 from config.flink_config import (
     KAFKA_BOOTSTRAP,
     TRANSACTIONS_TOPIC,
@@ -46,7 +36,10 @@ from config.flink_config import (
     create_stream_env,
     setup_logging
 )
+from model.transaction import Transaction
+from processor.advanced_stateful_fraud_detection_processor import AdvancedStatefulFraudDetectionProcessor
 
+# Add parent directory to path for imports
 logger = logging.getLogger(__name__)
 
 
@@ -57,19 +50,26 @@ def main():
 
     # 1. Create environment
     env = create_stream_env(enable_web_ui=True, parallelism=2)
-    logger.info("Flink Web UI: http://localhost:8082")
 
     # 2. Kafka Source
     kafka_source = KafkaSource.builder() \
         .set_bootstrap_servers(KAFKA_BOOTSTRAP) \
         .set_topics(TRANSACTIONS_TOPIC) \
-        .set_group_id("stateful-fraud-detection-demo") \
+        .set_group_id("python-stateful-fraud-detection-demo") \
         .set_starting_offsets(KafkaOffsetsInitializer.earliest()) \
         .set_value_only_deserializer(SimpleStringSchema()) \
         .build()
 
-    # Note: Kafka sink disabled due to Python-Java serialization issues
-    # For production, consider using kafka-python library or Table API
+    # 3. Kafka sink
+    record_serializer = KafkaRecordSerializationSchema.builder() \
+        .set_topic(FRAUD_ALERTS_STATEFUL_TOPIC) \
+        .set_value_serialization_schema(SimpleStringSchema()) \
+        .build()
+
+    kafka_sink = KafkaSink.builder() \
+        .set_bootstrap_servers(KAFKA_BOOTSTRAP) \
+        .set_record_serializer(record_serializer) \
+        .build()
 
     # 4. Read and parse transactions
     transactions = env.from_source(
@@ -87,17 +87,22 @@ def main():
         .process(AdvancedStatefulFraudDetectionProcessor()) \
         .name("Stateful Fraud Detection")
 
-    # 6. Print for demo visibility
+    # 6. Sink to kafka
+    json_fraud_alerts = fraud_alerts.map(lambda alert: alert.to_json(), output_type=Types.STRING())
+    json_fraud_alerts.sink_to(kafka_sink)
+
+    # 7. Print for demo visibility
     fraud_alerts.print()
 
     # Execute
     logger.info("Starting Stateful Fraud Detection Demo")
     logger.info("Test pattern - send these two messages for same account:")
-    logger.info('1) Small: {"transactionId":"tx-001","srcAccountId":"acc-123","destAccountId":"acc-456","amount":50.0,"currency":"EUR","eventTime":1702900000000}')
-    logger.info('2) Large: {"transactionId":"tx-002","srcAccountId":"acc-123","destAccountId":"acc-789","amount":75000.0,"currency":"EUR","eventTime":1702900001000}')
-    env.execute("Stateful Fraud Detection Demo")
+    logger.info(
+        '1) Small: {"transactionId":"tx-001","srcAccountId":"acc-123","destAccountId":"acc-456","amount":50.0,"currency":"EUR","eventTime":1702900000000}')
+    logger.info(
+        '2) Large: {"transactionId":"tx-002","srcAccountId":"acc-123","destAccountId":"acc-789","amount":75000.0,"currency":"EUR","eventTime":1702900001000}')
+    env.execute("[PYTHON] Stateful Fraud Detection Demo")
 
 
 if __name__ == "__main__":
     main()
-

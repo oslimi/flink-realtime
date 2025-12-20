@@ -19,26 +19,19 @@ Concepts introduced:
 This demo simply reads from Kafka and prints transactions.
 No fraud detection yet - just infrastructure setup.
 """
-import sys
-import os
 import logging
-import json
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.datastream.connectors.kafka import KafkaSource, KafkaOffsetsInitializer
-from pyflink.common.watermark_strategy import WatermarkStrategy
 from pyflink.common.serialization import SimpleStringSchema
+from pyflink.common.watermark_strategy import WatermarkStrategy
+from pyflink.datastream.connectors.kafka import KafkaSource, KafkaOffsetsInitializer
 
-from model.transaction import Transaction
 from config.flink_config import (
     KAFKA_BOOTSTRAP,
     TRANSACTIONS_TOPIC,
     create_stream_env,
     setup_logging
 )
+from model.transaction import Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +76,11 @@ def main():
     logger.info("Starting Kafka Source Demo")
     logger.info(f"Reading from topic: {TRANSACTIONS_TOPIC}")
     logger.info("Test by sending a message:")
-    logger.info('{"transactionId":"tx-001","srcAccountId":"acc-123","destAccountId":"acc-456","amount":1000.0,"currency":"EUR","eventTime":1702900000000}')
+    logger.info(
+        '{"transactionId":"tx-001","srcAccountId":"acc-123","destAccountId":"acc-456","amount":1000.0,"currency":"EUR","eventTime":1702900000000}')
 
     env.execute("Kafka Source Demo")
 
 
 if __name__ == "__main__":
     main()
-

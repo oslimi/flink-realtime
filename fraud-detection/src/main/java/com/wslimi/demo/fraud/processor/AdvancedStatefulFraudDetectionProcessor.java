@@ -52,7 +52,7 @@ public class AdvancedStatefulFraudDetectionProcessor extends KeyedProcessFunctio
                     .timestamp(System.currentTimeMillis())
                     .previousTransaction(previousTransaction)
                     .currentTransaction(transaction)
-                    .comment(String.format("Fraud pattern: small transaction (<%.2f) followed by large transaction (>%.2f)",
+                    .comment(String.format("[JAVA] Fraud pattern: small transaction (<%.2f) followed by large transaction (>%.2f)",
                             SMALL_AMOUNT_THRESHOLD, LARGE_AMOUNT_THRESHOLD))
                     .build();
 

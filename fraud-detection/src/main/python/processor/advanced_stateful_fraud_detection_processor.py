@@ -3,6 +3,7 @@ Advanced Stateful Fraud Detection Processor - Pattern-based fraud detection with
 """
 import logging
 import uuid
+
 from pyflink.datastream import KeyedProcessFunction, RuntimeContext
 from pyflink.common.typeinfo import Types
 from pyflink.datastream.state import ValueStateDescriptor
@@ -37,7 +38,6 @@ class AdvancedStatefulFraudDetectionProcessor(KeyedProcessFunction):
         self.previous_transaction_state = runtime_context.get_state(
             ValueStateDescriptor("previous-transaction", Types.PICKLED_BYTE_ARRAY())
         )
-
     def process_element(self, transaction: Transaction, context: 'KeyedProcessFunction.Context'):
         """
         Process each transaction and detect fraud patterns using state.
@@ -65,7 +65,7 @@ class AdvancedStatefulFraudDetectionProcessor(KeyedProcessFunction):
                 timestamp=context.timer_service().current_processing_time(),
                 previous_transaction=previous_transaction,
                 current_transaction=transaction,
-                comment=f"Fraud pattern: small transaction (<{self.SMALL_AMOUNT_THRESHOLD:.2f}) "
+                comment=f"[PYTHON] Fraud pattern: small transaction (<{self.SMALL_AMOUNT_THRESHOLD:.2f}) "
                         f"followed by large transaction (>{self.LARGE_AMOUNT_THRESHOLD:.2f})"
             )
 
