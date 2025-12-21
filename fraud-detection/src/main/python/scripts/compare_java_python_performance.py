@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
-"""
-=============================================================================
-Performance Comparison: Java vs Python Flink Processing
-=============================================================================
-
-This script reads fraud alerts from Kafka and compares processing duration
-between Java and Python implementations.
-
-Usage:
-    python compare_java_python_performance.py
-"""
 import json
+import os
 from kafka import KafkaConsumer
 import plotly.graph_objects as go
 
@@ -163,6 +153,13 @@ def plot_comparison(java_msgs, python_msgs):
         ratio = (sum(python_durations)/len(python_durations)) / (sum(java_durations)/len(java_durations))
         print("-" * 50)
         print(f"📈 Python/Java ratio: {ratio:.2f}x {'(Python slower)' if ratio > 1 else '(Java slower)'}")
+
+    # Save to out folder
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'out')
+    os.makedirs(out_dir, exist_ok=True)
+    output_path = os.path.join(out_dir, 'python-java-comparison.html')
+    fig.write_html(output_path)
+    print(f"\n📁 Plot saved to: {output_path}")
 
     fig.show()
 

@@ -6,15 +6,6 @@ import com.wslimi.demo.fraud.model.Transaction;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 
-/**
- * Custom Flink SourceFunction for generating transactions
- *
- * This source function:
- * - Generates transactions using TransactionGenerator
- * - Respects Flink's checkpointing mechanism
- * - Supports parallel execution
- * - Can be cancelled gracefully
- */
 @Slf4j
 public class TransactionSourceFunction extends RichParallelSourceFunction<Transaction> {
 
@@ -30,35 +21,24 @@ public class TransactionSourceFunction extends RichParallelSourceFunction<Transa
     public void open(org.apache.flink.configuration.Configuration parameters) throws Exception {
         super.open(parameters);
         this.generator = new TransactionGenerator(config);
-
-        int subtaskIndex = getRuntimeContext().getIndexOfThisSubtask();
-        int parallelism = getRuntimeContext().getNumberOfParallelSubtasks();
-
-        log.info("Transaction Generator started - subtask {}/{}",
-                 subtaskIndex + 1, parallelism);
+        log.info("Generator started - subtask {}/{}",
+            getRuntimeContext().getIndexOfThisSubtask() + 1,
+            getRuntimeContext().getNumberOfParallelSubtasks());
     }
 
     @Override
     public void run(SourceContext<Transaction> ctx) throws Exception {
-        log.info("Starting transaction generation...");
-
         while (isRunning && generator.shouldContinue()) {
-            Transaction transaction = generator.generateTransaction();
-
             synchronized (ctx.getCheckpointLock()) {
-                ctx.collect(transaction);
+                ctx.collect(generator.generateTransaction());
             }
-
-            // Throttle to configured rate
             Thread.sleep(config.getDelayMillis());
         }
-
-        log.info("Transaction generation completed. Total: {}", generator.getMessageCount());
+        log.info("Generation completed. Total: {}", generator.getMessageCount());
     }
 
     @Override
     public void cancel() {
-        log.info("Cancelling transaction generator...");
         isRunning = false;
     }
 }

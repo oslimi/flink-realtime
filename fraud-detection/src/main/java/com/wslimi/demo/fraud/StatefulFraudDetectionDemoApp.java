@@ -19,26 +19,6 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsIni
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-/**
- * =============================================================================
- * DEMO 3: STATEFUL FRAUD DETECTION
- * =============================================================================
- *
- * Building on NaiveFraudDetectionDemo, this demo introduces STATE:
- * - ValueState to remember previous transaction
- * - Pattern-based fraud detection
- * - Stateful KeyedProcessFunction
- *
- * Concepts introduced:
- * - ValueState<T> - keyed state storing a single value
- * - State initialization in open()
- * - State read/write in processElement()
- * - State scoped per key (accountId)
- *
- * Fraud Rule: Small transaction (< 100) followed by large transaction (> 50,000)
- *
- * This pattern detects when attackers test with small amounts before draining.
- */
 @Slf4j
 public class StatefulFraudDetectionDemoApp {
 
@@ -46,74 +26,47 @@ public class StatefulFraudDetectionDemoApp {
     public static final String FRAUD_ALERTS_TOPIC = "fraud-alerts-stateful";
 
     public static void main(String[] args) throws Exception {
-        log.info("=== DEMO: Stateful Fraud Detection (with ValueState) ===");
-
-        // Get Kafka bootstrap servers automatically (works in IDE and Docker)
         String kafkaBootstrap = EnvironmentDetector.getKafkaBootstrapServers();
 
-        // 1. Create environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-        // Enable Web UI for local execution
         if (EnvironmentDetector.isLocalEnvironment()) {
             Configuration config = new Configuration();
             config.set(RestOptions.PORT, 8083);
             env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
-            log.info("Flink Web UI: http://localhost:8083");
         }
-
         env.setParallelism(2);
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
 
-        // 2. Kafka Source
-        log.info("Configuring Kafka source - bootstrap: {}, topic: {}", kafkaBootstrap, TRANSACTIONS_TOPIC);
-        KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
+        KafkaSource<String> source = KafkaSource.<String>builder()
                 .setBootstrapServers(kafkaBootstrap)
                 .setTopics(TRANSACTIONS_TOPIC)
-                .setGroupId("java-stateful-fraud-detection-demo")
+                .setGroupId("java-stateful-fraud-detection")
                 .setStartingOffsets(OffsetsInitializer.earliest())
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
 
-        // 3. Kafka Sink for fraud alerts
-        log.info("Configuring Kafka sink - topic: {}", FRAUD_ALERTS_TOPIC);
-        KafkaSink<FraudAdvancedAlert> alertsSink = KafkaSink.<FraudAdvancedAlert>builder()
+        KafkaSink<FraudAdvancedAlert> sink = KafkaSink.<FraudAdvancedAlert>builder()
                 .setBootstrapServers(kafkaBootstrap)
                 .setRecordSerializer(KafkaRecordSerializationSchema.<FraudAdvancedAlert>builder()
                         .setTopic(FRAUD_ALERTS_TOPIC)
-                        .setValueSerializationSchema(new FraudAdvancedAlertSerializationSchema(objectMapper))
+                        .setValueSerializationSchema(new FraudAdvancedAlertSerializationSchema(mapper))
                         .build())
                 .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .build();
 
-        // 4. Read and parse transactions
         DataStream<Transaction> transactions = env
-                .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
-                .map(json -> objectMapper.readValue(json, Transaction.class))
-                .name("JSON to Transaction");
+                .fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source")
+                .map(json -> mapper.readValue(json, Transaction.class));
 
-        // 5. Apply STATEFUL fraud detection
-        //    - Uses ValueState to remember previous transaction per account
-        //    - Detects pattern: small tx followed by large tx
-        log.info("Fraud rule: small amount (< 100) followed by large amount (> 50,000)");
-        DataStream<FraudAdvancedAlert> fraudAlerts = transactions
+        DataStream<FraudAdvancedAlert> alerts = transactions
                 .keyBy(Transaction::srcAccountId)
-                .process(new AdvancedStatefulFraudDetectionProcessor())
-                .name("Stateful Fraud Detection");
+                .process(new AdvancedStatefulFraudDetectionProcessor());
 
-        // 6. Sink alerts to Kafka
-        fraudAlerts.sinkTo(alertsSink).name("Kafka Alerts Sink");
+        alerts.sinkTo(sink);
+        alerts.print("ALERT");
 
-        // 7. Print for demo visibility
-        fraudAlerts.print("FRAUD_ALERT");
-
-        // Execute
-        log.info("Starting Stateful Fraud Detection Demo");
-        log.info("Test pattern - send these two messages for same account:");
-        log.info("1) Small: {\"transactionId\":\"tx-001\",\"srcAccountId\":\"acc-123\",\"destAccountId\":\"acc-456\",\"amount\":50.0,\"currency\":\"EUR\",\"eventTime\":1702900000000}");
-        log.info("2) Large: {\"transactionId\":\"tx-002\",\"srcAccountId\":\"acc-123\",\"destAccountId\":\"acc-789\",\"amount\":75000.0,\"currency\":\"EUR\",\"eventTime\":1702900001000}");
-        env.execute("[JAVA] Stateful Fraud Detection Demo");
+        log.info("Starting Stateful Fraud Detection | Kafka: {}", kafkaBootstrap);
+        env.execute("[JAVA] Stateful Fraud Detection");
     }
 }
-
