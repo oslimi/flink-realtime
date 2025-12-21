@@ -83,7 +83,7 @@ import org.apache.flink.types.Row;
  *     PostgreSQL (fraud_reports table)
  */
 @Slf4j
-public class FlinkFraudDetectionFullApplication {
+public class FlinkFraudDetectionFullApp {
 
     public static final String KAFKA_BOOTSTRAP = "localhost:9092";
     public static final String TRANSACTIONS_TOPIC = "transactions";

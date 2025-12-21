@@ -18,12 +18,21 @@ Concepts introduced:
 Fraud Rule: Small transaction (< 100) followed by large transaction (> 50,000)
 
 This pattern detects when attackers test with small amounts before draining.
+
+This script can be deployed to a Flink cluster using:
+  flink run -py stateful_fraud_detection_demo.py -pyfs /path/to/python/files
 """
 import logging
+import sys
+import os
+
+# Add parent directory to path for imports when running on cluster
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pyflink.common import Types
 from pyflink.common.serialization import SimpleStringSchema
 from pyflink.common.watermark_strategy import WatermarkStrategy
+from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.datastream.connectors.kafka import (
     KafkaSource,
     KafkaOffsetsInitializer, KafkaSink, KafkaRecordSerializationSchema
@@ -33,13 +42,12 @@ from config.flink_config import (
     KAFKA_BOOTSTRAP,
     TRANSACTIONS_TOPIC,
     FRAUD_ALERTS_STATEFUL_TOPIC,
-    create_stream_env,
-    setup_logging
+    setup_logging,
+    is_local_environment
 )
 from model.transaction import Transaction
 from processor.advanced_stateful_fraud_detection_processor import AdvancedStatefulFraudDetectionProcessor
 
-# Add parent directory to path for imports
 logger = logging.getLogger(__name__)
 
 
@@ -47,9 +55,23 @@ def main():
     """Main execution function."""
     setup_logging()
     logger.info("=== DEMO: Stateful Fraud Detection (with ValueState) ===")
+    logger.info(f"Kafka Bootstrap: {KAFKA_BOOTSTRAP}")
+    logger.info(f"Input Topic: {TRANSACTIONS_TOPIC}")
+    logger.info(f"Output Topic: {FRAUD_ALERTS_STATEFUL_TOPIC}")
 
-    # 1. Create environment
-    env = create_stream_env(enable_web_ui=True, parallelism=2)
+    # 1. Create environment - works for both local and cluster deployment
+    env = StreamExecutionEnvironment.get_execution_environment()
+
+    # Add Kafka connector JAR if running locally
+    if is_local_environment():
+        import glob
+        lib_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib')
+        if os.path.exists(lib_dir):
+            jar_files = glob.glob(os.path.join(lib_dir, '*.jar'))
+            if jar_files:
+                jar_urls = [f"file://{os.path.abspath(jar)}" for jar in jar_files]
+                env.add_jars(*jar_urls)
+                logger.info(f"Added {len(jar_files)} JAR dependencies from {lib_dir}")
 
     # 2. Kafka Source
     kafka_source = KafkaSource.builder() \

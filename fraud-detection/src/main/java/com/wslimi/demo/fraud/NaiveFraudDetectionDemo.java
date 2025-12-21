@@ -23,7 +23,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  * DEMO 2: NAIVE FRAUD DETECTION (STATELESS)
  * =============================================================================
  *
- * Building on KafkaSourceDemo, this demo adds:
+ * Building on KafkaSourceDemoApp, this demo adds:
  * - Simple fraud detection rule (amount > threshold)
  * - KeyedProcessFunction (stateless version)
  * - Kafka Sink for sending alerts

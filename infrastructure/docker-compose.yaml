@@ -114,10 +114,13 @@ services:
       - streaming-network
 
   # ===========================================
-  # Apache Flink JobManager
+  # Apache Flink JobManager (with Python support)
   # ===========================================
   flink-jobmanager:
-    image: flink:${FLINK_VERSION:-1.20}
+    build:
+      context: ./flink
+      dockerfile: Dockerfile
+    image: flink-python:1.20-java17
     hostname: flink-jobmanager
     container_name: flink-jobmanager
     ports:
@@ -134,10 +137,13 @@ services:
       - streaming-network
 
   # ===========================================
-  # Apache Flink TaskManager
+  # Apache Flink TaskManager (with Python support)
   # ===========================================
   flink-taskmanager:
-    image: flink:${FLINK_VERSION:-1.20}
+    build:
+      context: ./flink
+      dockerfile: Dockerfile
+    image: flink-python:1.20-java17
     hostname: flink-taskmanager
     container_name: flink-taskmanager
     depends_on:

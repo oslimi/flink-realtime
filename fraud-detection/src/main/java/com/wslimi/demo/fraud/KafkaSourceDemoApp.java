@@ -33,7 +33,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  * Run this demo first to verify Kafka connectivity.
  */
 @Slf4j
-public class KafkaSourceDemo {
+public class KafkaSourceDemoApp {
 
     public static final String KAFKA_BOOTSTRAP = "localhost:9092";
     public static final String TRANSACTIONS_TOPIC = "transactions";

@@ -66,7 +66,8 @@ class AdvancedStatefulFraudDetectionProcessor(KeyedProcessFunction):
                 previous_transaction=previous_transaction,
                 current_transaction=transaction,
                 comment=f"[PYTHON] Fraud pattern: small transaction (<{self.SMALL_AMOUNT_THRESHOLD:.2f}) "
-                        f"followed by large transaction (>{self.LARGE_AMOUNT_THRESHOLD:.2f})"
+                        f"followed by large transaction (>{self.LARGE_AMOUNT_THRESHOLD:.2f})",
+                processing_duration=context.timer_service().current_processing_time() - transaction.event_time
             )
 
             # Emit alert

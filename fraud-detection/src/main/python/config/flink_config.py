@@ -2,20 +2,69 @@
 Flink configuration utilities.
 """
 import logging
+import os
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.common import Configuration
 
 
-# Kafka Configuration
-KAFKA_BOOTSTRAP = "localhost:9092"
+def get_kafka_bootstrap_servers():
+    """
+    Automatically detect Kafka bootstrap servers based on environment.
+    - Docker deployment: uses broker:29092
+    - IDE/local execution: uses localhost:9092
+
+    This mirrors the Java EnvironmentDetector class.
+    """
+    logger = logging.getLogger(__name__)
+
+    # Check for explicit environment variable first
+    explicit_kafka = os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
+    if explicit_kafka:
+        logger.info(f"Using explicit KAFKA_BOOTSTRAP_SERVERS: {explicit_kafka}")
+        return explicit_kafka
+
+    # Auto-detect: check if running in Docker
+    hostname = os.environ.get("HOSTNAME", "")
+    in_docker = os.environ.get("IN_DOCKER", "")
+
+    if hostname.startswith("flink-") or "taskmanager" in hostname or in_docker == "true":
+        logger.info("Detected Docker environment, using internal broker address: broker:29092")
+        return "broker:29092"
+
+    # Default to localhost for IDE/local execution
+    logger.info("Detected local environment, using localhost: localhost:9092")
+    return "localhost:9092"
+
+
+def is_docker_environment():
+    """Check if running in Docker environment."""
+    hostname = os.environ.get("HOSTNAME", "")
+    in_docker = os.environ.get("IN_DOCKER", "")
+    return hostname.startswith("flink-") or "taskmanager" in hostname or in_docker == "true"
+
+
+def is_local_environment():
+    """Check if running in local/IDE environment."""
+    return not is_docker_environment()
+
+
+# Kafka Configuration - Auto-detected
+KAFKA_BOOTSTRAP = get_kafka_bootstrap_servers()
 TRANSACTIONS_TOPIC = "transactions"
 FRAUD_ALERTS_NAIVE_TOPIC = "fraud-alerts-naive"
 FRAUD_ALERTS_STATEFUL_TOPIC = "fraud-alerts-stateful"
 FRAUD_ALERTS_TOPIC = "fraud-alerts"
 FRAUD_REPORTS_TOPIC = "fraud-reports"
 
-# PostgreSQL Configuration
-POSTGRES_URL = "jdbc:postgresql://localhost:5432/streaming_demo"
+# PostgreSQL Configuration - Auto-detected
+def get_postgres_host():
+    """Get PostgreSQL host based on environment."""
+    if is_docker_environment():
+        return "postgresql"  # Docker container name
+    return "localhost"
+
+POSTGRES_HOST = get_postgres_host()
+POSTGRES_URL = f"jdbc:postgresql://{POSTGRES_HOST}:5432/streaming_demo"
 POSTGRES_USER = "app_user"
 POSTGRES_PASSWORD = "app_password"
 POSTGRES_DRIVER = "org.postgresql.Driver"

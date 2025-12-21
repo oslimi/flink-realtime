@@ -1,7 +1,5 @@
 package com.wslimi.demo.fraud.model;
 
-import lombok.Getter;
-
 import java.io.Serializable;
 
 public record Transaction(

@@ -5,6 +5,7 @@ import com.wslimi.demo.fraud.model.FraudAdvancedAlert;
 import com.wslimi.demo.fraud.model.Transaction;
 import com.wslimi.demo.fraud.processor.AdvancedStatefulFraudDetectionProcessor;
 import com.wslimi.demo.fraud.serde.FraudAdvancedAlertSerializationSchema;
+import com.wslimi.demo.fraud.util.EnvironmentDetector;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -39,28 +40,36 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  * This pattern detects when attackers test with small amounts before draining.
  */
 @Slf4j
-public class StatefulFraudDetectionDemo {
+public class StatefulFraudDetectionDemoApp {
 
-    public static final String KAFKA_BOOTSTRAP = "localhost:9092";
     public static final String TRANSACTIONS_TOPIC = "transactions";
     public static final String FRAUD_ALERTS_TOPIC = "fraud-alerts-stateful";
 
     public static void main(String[] args) throws Exception {
         log.info("=== DEMO: Stateful Fraud Detection (with ValueState) ===");
 
-        // 1. Create environment
-        Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8083);
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
-        env.setParallelism(2);
+        // Get Kafka bootstrap servers automatically (works in IDE and Docker)
+        String kafkaBootstrap = EnvironmentDetector.getKafkaBootstrapServers();
 
-        log.info("Flink Web UI: http://localhost:8082");
+        // 1. Create environment
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        // Enable Web UI for local execution
+        if (EnvironmentDetector.isLocalEnvironment()) {
+            Configuration config = new Configuration();
+            config.set(RestOptions.PORT, 8083);
+            env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
+            log.info("Flink Web UI: http://localhost:8083");
+        }
+
+        env.setParallelism(2);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
         // 2. Kafka Source
+        log.info("Configuring Kafka source - bootstrap: {}, topic: {}", kafkaBootstrap, TRANSACTIONS_TOPIC);
         KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
-                .setBootstrapServers(KAFKA_BOOTSTRAP)
+                .setBootstrapServers(kafkaBootstrap)
                 .setTopics(TRANSACTIONS_TOPIC)
                 .setGroupId("java-stateful-fraud-detection-demo")
                 .setStartingOffsets(OffsetsInitializer.earliest())
@@ -70,7 +79,7 @@ public class StatefulFraudDetectionDemo {
         // 3. Kafka Sink for fraud alerts
         log.info("Configuring Kafka sink - topic: {}", FRAUD_ALERTS_TOPIC);
         KafkaSink<FraudAdvancedAlert> alertsSink = KafkaSink.<FraudAdvancedAlert>builder()
-                .setBootstrapServers(KAFKA_BOOTSTRAP)
+                .setBootstrapServers(kafkaBootstrap)
                 .setRecordSerializer(KafkaRecordSerializationSchema.<FraudAdvancedAlert>builder()
                         .setTopic(FRAUD_ALERTS_TOPIC)
                         .setValueSerializationSchema(new FraudAdvancedAlertSerializationSchema(objectMapper))
