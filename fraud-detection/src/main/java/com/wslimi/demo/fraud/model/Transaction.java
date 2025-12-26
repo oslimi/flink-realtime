@@ -2,6 +2,7 @@ package com.wslimi.demo.fraud.model;
 
 import java.io.Serializable;
 
+
 public record Transaction(
         String transactionId,
         String srcAccountId,
