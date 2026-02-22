@@ -55,7 +55,7 @@ public class GeneratorConfig implements Serializable {
     private boolean enableFraudPatterns = false;
 
     @Builder.Default
-    private double fraudPatternProbability = 0.05; // 5% chance of fraud pattern
+    private double fraudPatternProbability = 0.70; // 5% chance of fraud pattern
 
     @Builder.Default
     private double fraudSmallAmount = 50.0; // Small test transaction
