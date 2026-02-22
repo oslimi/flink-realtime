@@ -15,7 +15,7 @@ import java.util.UUID;
 public class AdvancedStatefulFraudDetectionProcessor extends KeyedProcessFunction<String, Transaction, FraudAdvancedAlert> {
 
     private static final double SMALL_THRESHOLD = 100.0;
-    private static final double LARGE_THRESHOLD = 50000.0;
+    private static final double LARGE_THRESHOLD = 50_000.0;
 
     private transient ValueState<Transaction> prevTxState;
 

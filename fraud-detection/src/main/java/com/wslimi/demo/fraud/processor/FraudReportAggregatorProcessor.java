@@ -24,7 +24,7 @@ import java.util.UUID;
 @Slf4j
 public class FraudReportAggregatorProcessor extends KeyedProcessFunction<String, FraudAdvancedAlert, FraudReport> {
 
-    private static final long REPORT_INTERVAL_MS = 60_000L; // 1 minute
+    private static final long REPORT_INTERVAL_MS = 5_000L; // 1 minute
 
     // State to collect alerts during the period
     private transient ListState<FraudAdvancedAlert> alertsState;

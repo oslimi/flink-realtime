@@ -12,6 +12,8 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsIni
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
+import java.util.Objects;
+
 /**
  * =============================================================================
  * DEMO 1: KAFKA SOURCE WITH JSON DESERIALIZATION
@@ -72,8 +74,15 @@ public class KafkaSourceDemoApp {
                 .map(json -> objectMapper.readValue(json, Transaction.class))
                 .name("JSON to Transaction");
 
+        DataStream<Transaction> multipliedTransactions = transactions
+                .map(tx -> tx.multiplyBy(Math.PI))
+                .filter(tx -> tx.amount() > 900.0 && Objects.equals(tx.currency(), "EUR"));
+
+
         // 6. Print to console (simple sink for debugging)
         transactions.print("TRANSACTION");
+
+        multipliedTransactions.print("MULTIPLIED_TRANSACTION_EUR");
 
         // 7. Execute the job
         log.info("Starting Kafka Source Demo");

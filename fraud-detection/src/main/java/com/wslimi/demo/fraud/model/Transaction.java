@@ -12,4 +12,14 @@ public record Transaction(
         Long eventTime
 
 ) implements Serializable {
+    public Transaction multiplyBy(double factor) {
+        return new Transaction(
+                this.transactionId,
+                this.srcAccountId,
+                this.destAccountId,
+                this.amount * factor,
+                this.currency,
+                this.eventTime
+        );
+    }
 }
