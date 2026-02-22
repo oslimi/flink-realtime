@@ -353,6 +353,21 @@ export JAVA_HOME=/path/to/java17 && mvn clean package
 ```
 </details>
 
+<details>
+<summary><strong>java.lang.reflect.InaccessibleObjectException on Java 17+</strong></summary>
+
+Flink's use of Kryo requires certain JVM flags to access internal classes on Java 17. If you encounter an `InaccessibleObjectException` related to `java.util.Arrays$ArrayList`, add the following to your JVM arguments:
+```sh
+--add-opens java.base/java.util=ALL-UNNAMED \
+--add-opens java.base/java.lang=ALL-UNNAMED \
+--add-opens java.base/java.lang.reflect=ALL-UNNAMED \
+--add-opens java.base/java.util.concurrent=ALL-UNNAMED \
+--add-opens java.base/java.nio=ALL-UNNAMED \
+--add-opens java.base/java.net=ALL-UNNAMED \
+--add-opens java.base/java.sql=ALL-UNNAMED
+```
+</details>
+
 ## Contributing
 
 1. Fork the repository

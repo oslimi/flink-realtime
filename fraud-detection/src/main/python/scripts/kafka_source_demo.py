@@ -21,6 +21,7 @@ No fraud detection yet - just infrastructure setup.
 """
 import logging
 
+import numpy as np
 from pyflink.common.serialization import SimpleStringSchema
 from pyflink.common.watermark_strategy import WatermarkStrategy
 from pyflink.datastream.connectors.kafka import KafkaSource, KafkaOffsetsInitializer
@@ -34,6 +35,11 @@ from config.flink_config import (
 from model.transaction import Transaction
 
 logger = logging.getLogger(__name__)
+
+
+def parse_transaction(json_str: str) -> Transaction:
+    """Parse JSON string to Transaction object."""
+    return Transaction.from_json(json_str)
 
 
 def main():
@@ -63,14 +69,15 @@ def main():
     )
 
     # 4. Parse JSON to Transaction
-    def parse_transaction(json_str: str) -> Transaction:
-        """Parse JSON string to Transaction object."""
-        return Transaction.from_json(json_str)
-
     transactions = stream.map(parse_transaction).name("JSON to Transaction")
 
+    multipliedTransaction = (transactions
+                             .map(lambda tx: Transaction.multiplyByfactor(tx, np.pi))
+                             .filter(lambda tx: tx.amount > 900.0))
+
     # 5. Print transactions
-    transactions.print()
+    transactions.print("TRANSACTIONS_TOPIC")
+    multipliedTransaction.print("MULTIPLIED_TRANSACTIONS")
 
     # 6. Execute
     logger.info("Starting Kafka Source Demo")

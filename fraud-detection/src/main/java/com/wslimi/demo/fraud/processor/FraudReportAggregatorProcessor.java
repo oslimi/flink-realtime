@@ -73,21 +73,22 @@ public class FraudReportAggregatorProcessor extends KeyedProcessFunction<String,
         Long windowStart = windowStartState.value();
         windowStart = windowStart == null ? timestamp - REPORT_INTERVAL_MS : windowStart;
 
-        // Collect all alerts from the period
-        List<FraudAdvancedAlert> periodAlerts = new ArrayList<>();
-        List<String> alertIds = new ArrayList<>();
+        int alertCount = 0;
         double totalFraudAmount = 0.0;
+        StringBuilder alertIdsBuilder = new StringBuilder();
 
         for (FraudAdvancedAlert alert : alertsState.get()) {
-            periodAlerts.add(alert);
-            alertIds.add(alert.AlertId());
+            alertCount++;
             totalFraudAmount += alert.currentTransaction().amount();
+            if (alertIdsBuilder.length() > 0) {
+                alertIdsBuilder.append(",");
+            }
+            alertIdsBuilder.append(alert.AlertId());
         }
 
-        int alertCount = periodAlerts.size();
-
-        // Only emit report if there were alerts
         if (alertCount > 0) {
+            String alertIdsStr = alertIdsBuilder.toString();
+
             FraudReport report = FraudReport.builder()
                     .reportId(UUID.randomUUID().toString())
                     .reportTimestamp(timestamp)
@@ -95,22 +96,22 @@ public class FraudReportAggregatorProcessor extends KeyedProcessFunction<String,
                     .windowEnd(timestamp)
                     .accountId(ctx.getCurrentKey())
                     .totalAlerts(alertCount)
-                    .summary(String.format("Account %s: %d fraud alerts in the last minute, total fraud amount: %.2f",
+                    .totalFraudAmount(totalFraudAmount)
+                    .alertIds(new ArrayList<>(List.of(alertIdsStr.split(","))))
+                    .summary(String.format("Account %s: %d fraud alerts in the last minute, total fraud amount: %.2f EUR",
                             ctx.getCurrentKey(), alertCount, totalFraudAmount))
                     .build();
 
             log.info("📊 FRAUD REPORT for account {}: {} alerts, total fraud amount: {}, alert IDs: {}",
-                    ctx.getCurrentKey(), alertCount, totalFraudAmount, alertIds);
+                    ctx.getCurrentKey(), alertCount, totalFraudAmount, alertIdsStr);
 
             out.collect(report);
         } else {
             log.debug("📊 No alerts for account {} in the last minute, skipping report", ctx.getCurrentKey());
         }
 
-        // Clear alerts for the next period
         alertsState.clear();
 
-        // Update window start and schedule next timer
         windowStartState.update(timestamp);
         long nextTimer = timestamp + REPORT_INTERVAL_MS;
         ctx.timerService().registerProcessingTimeTimer(nextTimer);

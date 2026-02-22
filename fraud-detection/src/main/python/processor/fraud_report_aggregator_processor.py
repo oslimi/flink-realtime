@@ -22,7 +22,7 @@ class FraudReportAggregatorProcessor(KeyedProcessFunction):
     Only aggregates alerts - does not detect fraud.
     """
 
-    REPORT_INTERVAL_MS = 60_000  # 1 minute
+    REPORT_INTERVAL_MS = 60  # 1 minute
 
     def __init__(self):
         # State to collect alerts during the period
