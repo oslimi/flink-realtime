@@ -21,6 +21,29 @@ public final class EnvironmentDetector {
         return "localhost:9092";
     }
 
+    public static String getPostgresUrl() {
+        String explicitUrl = System.getenv("POSTGRES_URL");
+        if (explicitUrl != null && !explicitUrl.isEmpty()) {
+            return explicitUrl;
+        }
+
+        if (isDockerEnvironment()) {
+            return "jdbc:postgresql://postgresql:5432/streaming_demo";
+        }
+
+        return "jdbc:postgresql://localhost:5432/streaming_demo";
+    }
+
+    public static String getPostgresUser() {
+        String user = System.getenv("POSTGRES_USER");
+        return (user != null && !user.isEmpty()) ? user : "app_user";
+    }
+
+    public static String getPostgresPassword() {
+        String password = System.getenv("POSTGRES_PASSWORD");
+        return (password != null && !password.isEmpty()) ? password : "app_password";
+    }
+
     public static boolean isDockerEnvironment() {
         String hostname = System.getenv("HOSTNAME");
         String inDocker = System.getenv("IN_DOCKER");

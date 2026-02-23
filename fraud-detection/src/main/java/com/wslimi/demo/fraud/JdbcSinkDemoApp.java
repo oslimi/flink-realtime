@@ -108,11 +108,12 @@ public class JdbcSinkDemoApp {
         log.info("Configuring PostgreSQL sink: {}", POSTGRES_URL);
         SinkFunction<Row> postgresSink = JdbcSink.sink(
                 // SQL INSERT statement with UPSERT (ON CONFLICT)
-                "INSERT INTO fraud_reports (report_id, report_timestamp, window_start, window_end, account_id, total_alerts, total_fraud_amount, summary) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+                "INSERT INTO fraud_reports (report_id, report_timestamp, window_start, window_end, account_id, total_alerts, total_fraud_amount, alert_ids, summary) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                         "ON CONFLICT (report_id) DO UPDATE SET " +
                         "total_alerts = EXCLUDED.total_alerts, " +
                         "total_fraud_amount = EXCLUDED.total_fraud_amount, " +
+                        "alert_ids = EXCLUDED.alert_ids, " +
                         "summary = EXCLUDED.summary",
                 // Statement setter - maps Row fields to SQL parameters
                 (statement, row) -> {
@@ -123,7 +124,8 @@ public class JdbcSinkDemoApp {
                     statement.setString(5, (String) row.getField(4));   // account_id
                     statement.setInt(6, (Integer) row.getField(5));     // total_alerts
                     statement.setDouble(7, (Double) row.getField(6));   // total_fraud_amount
-                    statement.setString(8, (String) row.getField(7));   // summary
+                    statement.setString(8, (String) row.getField(7));   // alert_ids
+                    statement.setString(9, (String) row.getField(8));   // summary
                 },
                 // Execution options - batching configuration
                 JdbcExecutionOptions.builder()
@@ -168,6 +170,7 @@ public class JdbcSinkDemoApp {
                         report.accountId(),
                         report.totalAlerts(),
                         report.totalFraudAmount(),
+                        report.alertIds(),
                         report.summary()
                 ))
                 .name("FraudReport to Row");

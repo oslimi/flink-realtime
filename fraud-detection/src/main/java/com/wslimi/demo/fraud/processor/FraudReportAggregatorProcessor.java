@@ -12,8 +12,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -97,7 +95,7 @@ public class FraudReportAggregatorProcessor extends KeyedProcessFunction<String,
                     .accountId(ctx.getCurrentKey())
                     .totalAlerts(alertCount)
                     .totalFraudAmount(totalFraudAmount)
-                    .alertIds(new ArrayList<>(List.of(alertIdsStr.split(","))))
+                    .alertIds(alertIdsStr)
                     .summary(String.format("Account %s: %d fraud alerts in the last minute, total fraud amount: %.2f EUR",
                             ctx.getCurrentKey(), alertCount, totalFraudAmount))
                     .build();
