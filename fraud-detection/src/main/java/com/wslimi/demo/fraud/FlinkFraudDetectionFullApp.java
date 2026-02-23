@@ -102,7 +102,10 @@ public class FlinkFraudDetectionFullApp {
         // =====================================================================
         // ENVIRONMENT SETUP
         // =====================================================================
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        // 1. Create environment with Web UI on port 8085
+        Configuration config = new Configuration();
+        config.set(RestOptions.PORT, 8085);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
         env.setParallelism(2);
 
         log.info("┌─────────────────────────────────────────────────────────────┐");
