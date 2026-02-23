@@ -41,7 +41,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 @Slf4j
 public class NaiveFraudDetectionDemo {
 
-    public static final String KAFKA_BOOTSTRAP = "localhost:9092";
+    public static final String KAFKA_BOOTSTRAP = "broker:29092";
     public static final String TRANSACTIONS_TOPIC = "transactions";
     public static final String FRAUD_ALERTS_TOPIC = "fraud-alerts-naive";
 
@@ -54,7 +54,7 @@ public class NaiveFraudDetectionDemo {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
         env.setParallelism(2);
 
-        log.info("Flink Web UI: http://localhost:8081");
+        log.info("Flink Web UI: http://broker:8081");
 
         ObjectMapper objectMapper = new ObjectMapper();
 

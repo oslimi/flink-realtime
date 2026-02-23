@@ -3,26 +3,33 @@ package com.wslimi.demo.fraud.processor;
 import com.wslimi.demo.fraud.model.FraudAdvancedAlert;
 import com.wslimi.demo.fraud.model.Transaction;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
-public class AdvancedStatefulFraudDetectionProcessor extends KeyedProcessFunction<String, Transaction, FraudAdvancedAlert> {
+public class    AdvancedStatefulFraudDetectionProcessor extends KeyedProcessFunction<String, Transaction, FraudAdvancedAlert> {
 
     private static final double SMALL_THRESHOLD = 100.0;
     private static final double LARGE_THRESHOLD = 50_000.0;
 
     private transient ValueState<Transaction> prevTxState;
 
+    private transient MapState<String, Transaction> recentTxState;
+    private transient ValueState<Map<String, Transaction>> accountTxHistoryState;
+
     @Override
     public void open(Configuration parameters) {
         prevTxState = getRuntimeContext().getState(
                 new ValueStateDescriptor<>("prev-tx", Transaction.class));
+
+
     }
 
     @Override
@@ -46,5 +53,11 @@ public class AdvancedStatefulFraudDetectionProcessor extends KeyedProcessFunctio
         } else {
             prevTxState.update(tx);
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        prevTxState.clear();
+        log.info("job ended");
     }
 }

@@ -21,23 +21,22 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 @Slf4j
 public class StatefulFraudDetectionDemoApp {
+    public static final String KAFKA_BOOTSTRAP = "broker:29092";
 
     public static final String TRANSACTIONS_TOPIC = "transactions";
     public static final String FRAUD_ALERTS_TOPIC = "fraud-alerts-stateful";
 
     public static void main(String[] args) throws Exception {
-        String kafkaBootstrap = EnvironmentDetector.getKafkaBootstrapServers();
-
         // 1. Create environment with Web UI on port 8085
         Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8085);
+        config.set(RestOptions.PORT, 8081);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
         env.setParallelism(2);
 
         ObjectMapper mapper = new ObjectMapper();
 
         KafkaSource<String> source = KafkaSource.<String>builder()
-                .setBootstrapServers(kafkaBootstrap)
+                .setBootstrapServers(KAFKA_BOOTSTRAP)
                 .setTopics(TRANSACTIONS_TOPIC)
                 .setGroupId("java-stateful-fraud-detection")
                 .setStartingOffsets(OffsetsInitializer.earliest())
@@ -45,7 +44,7 @@ public class StatefulFraudDetectionDemoApp {
                 .build();
 
         KafkaSink<FraudAdvancedAlert> sink = KafkaSink.<FraudAdvancedAlert>builder()
-                .setBootstrapServers(kafkaBootstrap)
+                .setBootstrapServers(KAFKA_BOOTSTRAP)
                 .setRecordSerializer(KafkaRecordSerializationSchema.<FraudAdvancedAlert>builder()
                         .setTopic(FRAUD_ALERTS_TOPIC)
                         .setValueSerializationSchema(new FraudAdvancedAlertSerializationSchema(mapper))
@@ -64,7 +63,7 @@ public class StatefulFraudDetectionDemoApp {
         alerts.sinkTo(sink);
         alerts.print("ALERT");
 
-        log.info("Starting Stateful Fraud Detection | Kafka: {}", kafkaBootstrap);
+        log.info("Starting Stateful Fraud Detection | Kafka: {}", KAFKA_BOOTSTRAP);
         env.execute("[JAVA] Stateful Fraud Detection");
     }
 }

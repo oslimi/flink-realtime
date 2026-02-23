@@ -104,9 +104,9 @@ public class WindowedFraudReportingDemoApp {
         log.info("║  Using: Watermarks + Tumbling Windows                       ║");
         log.info("╚══════════════════════════════════════════════════════════════╝");
 
-        // 1. Create environment with Web UI on port 8085
+        // 1. Create environment with Web UI on port 8081
         Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8085);
+        config.set(RestOptions.PORT, 8081);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
         env.setParallelism(2);
 
