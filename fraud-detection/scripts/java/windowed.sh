@@ -8,7 +8,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-JAR="$PROJECT_ROOT/fraud-detection/target/fraud-detection-1.0-SNAPSHOT.jar"
+JAR="$PROJECT_ROOT/target/fraud-detection-1.0-SNAPSHOT.jar"
 CLASS="com.wslimi.demo.fraud.WindowedFraudReportingDemoApp"
 PARALLELISM="${1:-2}"
 
