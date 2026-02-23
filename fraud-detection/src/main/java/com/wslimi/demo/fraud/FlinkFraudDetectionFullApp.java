@@ -102,13 +102,11 @@ public class FlinkFraudDetectionFullApp {
         // =====================================================================
         // ENVIRONMENT SETUP
         // =====================================================================
-        Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8082);
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(2);
 
         log.info("┌─────────────────────────────────────────────────────────────┐");
-        log.info("│ Flink Web UI: http://localhost:8082                         │");
+        log.info("│ Flink Web UI: http://localhost:8081                         │");
         log.info("└─────────────────────────────────────────────────────────────┘");
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -189,19 +187,19 @@ public class FlinkFraudDetectionFullApp {
         DataStream<Transaction> transactions = env
                 .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
                 .map(json -> objectMapper.readValue(json, Transaction.class))
-                .name("JSON to Transaction");
+                .name("[JAVA] JSON to Transaction");
 
         // Step 2: Stateful fraud detection
         DataStream<FraudAdvancedAlert> fraudAlerts = transactions
                 .keyBy(Transaction::srcAccountId)
                 .process(new AdvancedStatefulFraudDetectionProcessor())
-                .name("Stateful Fraud Detection");
+                .name("[JAVA] Stateful Fraud Detection");
 
         // Step 3: Timer-based report aggregation
         DataStream<FraudReport> fraudReports = fraudAlerts
                 .keyBy(alert -> alert.currentTransaction().srcAccountId())
                 .process(new FraudReportAggregatorProcessor())
-                .name("Report Aggregator (60s timer)");
+                .name("[JAVA] Report Aggregator (60s timer)");
 
         // Step 4: Convert to Row for PostgreSQL
         DataStream<Row> fraudReportRows = fraudReports
@@ -215,7 +213,7 @@ public class FlinkFraudDetectionFullApp {
                         report.totalFraudAmount(),
                         report.summary()
                 ))
-                .name("FraudReport to Row");
+                .name("[JAVA] FraudReport to Row");
 
         // =====================================================================
         // OUTPUT

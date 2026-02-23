@@ -42,12 +42,17 @@ DEFAULT_PARALLELISM = 2
 
 def create_stream_env(enable_web_ui=True, parallelism=DEFAULT_PARALLELISM):
     config = Configuration()
-    if enable_web_ui:
-        config.set_string("rest.port", "8082-8092")
+    # Don't set rest.port for cluster deployment
+    # The Flink cluster already has UI on port 8081
+
+    # Add Python files directory to system path for workers
+    python_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config.set_string("python.files", python_dir)
 
     env = StreamExecutionEnvironment.get_execution_environment(config)
     env.set_parallelism(parallelism)
 
+    # Add JAR files from lib directory
     lib_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib')
     if os.path.exists(lib_dir):
         jars = glob.glob(os.path.join(lib_dir, '*.jar'))

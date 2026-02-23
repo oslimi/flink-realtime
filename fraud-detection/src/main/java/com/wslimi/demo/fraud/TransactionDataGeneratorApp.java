@@ -29,7 +29,7 @@ public class TransactionDataGeneratorApp {
 
         DataStream<Transaction> transactions = env
             .addSource(new TransactionSourceFunction(config))
-            .name("Transaction Source")
+            .name("[JAVA] Transaction Source")
             .uid("tx-source")
             .assignTimestampsAndWatermarks(
                 WatermarkStrategy.<Transaction>forMonotonousTimestamps()
@@ -47,7 +47,7 @@ public class TransactionDataGeneratorApp {
             .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
             .build();
 
-        transactions.sinkTo(sink).name("Kafka Sink").uid("kafka-sink");
+        transactions.sinkTo(sink).name("[JAVA] Kafka Sink").uid("kafka-sink");
 
         log.info("Flink Web UI: http://localhost:{}", env.getConfiguration().get(RestOptions.PORT));
         env.execute("Transaction Data Generator");

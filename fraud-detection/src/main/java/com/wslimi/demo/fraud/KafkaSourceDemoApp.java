@@ -43,13 +43,11 @@ public class KafkaSourceDemoApp {
     public static void main(String[] args) throws Exception {
         log.info("=== DEMO: Kafka Source with JSON Deserialization ===");
 
-        // 1. Create Flink execution environment with Web UI
-        Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8082);
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
+        // 1. Create Flink execution environment
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(2);
 
-        log.info("Flink Web UI: http://localhost:8082");
+        log.info("Flink Web UI: http://localhost:8081");
 
         // 2. Create ObjectMapper for JSON deserialization
         ObjectMapper objectMapper = new ObjectMapper();
@@ -67,12 +65,12 @@ public class KafkaSourceDemoApp {
         // 4. Create DataStream from Kafka source
         DataStream<String> rawStream = env
                 .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
-                .name("Kafka Raw Stream");
+                .name("[JAVA] Kafka Raw Stream");
 
         // 5. Parse JSON to Transaction POJO
         DataStream<Transaction> transactions = rawStream
                 .map(json -> objectMapper.readValue(json, Transaction.class))
-                .name("JSON to Transaction");
+                .name("[JAVA] JSON to Transaction");
 
         DataStream<Transaction> multipliedTransactions = transactions
                 .map(tx -> tx.multiplyBy(Math.PI))

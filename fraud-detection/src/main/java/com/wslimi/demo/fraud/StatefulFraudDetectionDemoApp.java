@@ -29,11 +29,6 @@ public class StatefulFraudDetectionDemoApp {
         String kafkaBootstrap = EnvironmentDetector.getKafkaBootstrapServers();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        if (EnvironmentDetector.isLocalEnvironment()) {
-            Configuration config = new Configuration();
-            config.set(RestOptions.PORT, 8083);
-            env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
-        }
         env.setParallelism(2);
 
         ObjectMapper mapper = new ObjectMapper();

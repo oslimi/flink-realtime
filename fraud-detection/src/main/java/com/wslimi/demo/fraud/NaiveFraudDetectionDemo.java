@@ -48,13 +48,13 @@ public class NaiveFraudDetectionDemo {
     public static void main(String[] args) throws Exception {
         log.info("=== DEMO: Naive Fraud Detection (Stateless) ===");
 
-        // 1. Create environment
+        // 1. Create environment with Web UI on port 8085
         Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8082);
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
+        config.set(RestOptions.PORT, 8085);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
         env.setParallelism(2);
 
-        log.info("Flink Web UI: http://localhost:8082");
+        log.info("Flink Web UI: http://localhost:8085");
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -82,7 +82,7 @@ public class NaiveFraudDetectionDemo {
         DataStream<Transaction> transactions = env
                 .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
                 .map(json -> objectMapper.readValue(json, Transaction.class))
-                .name("JSON to Transaction");
+                .name("[JAVA] JSON to Transaction");
 
         // 5. Apply naive fraud detection
         //    - keyBy() partitions data by srcAccountId (required for KeyedProcessFunction)
@@ -91,10 +91,10 @@ public class NaiveFraudDetectionDemo {
         DataStream<FraudNaiveAlert> fraudAlerts = transactions
                 .keyBy(Transaction::srcAccountId)
                 .process(new NaiveFraudDetectionProcessor())
-                .name("Naive Fraud Detection");
+                .name("[JAVA] Naive Fraud Detection");
 
         // 6. Sink alerts to Kafka
-        fraudAlerts.sinkTo(alertsSink).name("Kafka Alerts Sink");
+        fraudAlerts.sinkTo(alertsSink).name("[JAVA] Kafka Alerts Sink");
 
         // 7. Also print for demo visibility
         fraudAlerts.print("FRAUD_ALERT");

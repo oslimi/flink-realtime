@@ -54,12 +54,10 @@ public class TimerReportingDemoApp {
         log.info("=== DEMO: Timers and Periodic Reporting ===");
 
         // 1. Create environment
-        Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8082);
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(2);
 
-        log.info("Flink Web UI: http://localhost:8082");
+        log.info("Flink Web UI: http://localhost:8081");
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -97,14 +95,14 @@ public class TimerReportingDemoApp {
         DataStream<Transaction> transactions = env
                 .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
                 .map(json -> objectMapper.readValue(json, Transaction.class))
-                .name("JSON to Transaction");
+                .name("[JAVA] JSON to Transaction");
 
         // 6. First processor: Fraud detection (stateful)
         log.info("Pipeline: Transactions → Fraud Detection → Report Aggregation");
         DataStream<FraudAdvancedAlert> fraudAlerts = transactions
                 .keyBy(Transaction::srcAccountId)
                 .process(new AdvancedStatefulFraudDetectionProcessor())
-                .name("Stateful Fraud Detection");
+                .name("[JAVA] Stateful Fraud Detection");
 
         // 7. Second processor: Report aggregation with TIMERS
         //    - Receives alerts from previous processor
@@ -113,11 +111,11 @@ public class TimerReportingDemoApp {
         DataStream<FraudReport> fraudReports = fraudAlerts
                 .keyBy(alert -> alert.currentTransaction().srcAccountId())
                 .process(new FraudReportAggregatorProcessor())
-                .name("Timer-based Report Aggregator");
+                .name("[JAVA] Timer-based Report Aggregator");
 
         // 8. Sink to Kafka
-        fraudAlerts.sinkTo(alertsSink).name("Alerts Kafka Sink");
-        fraudReports.sinkTo(reportsSink).name("Reports Kafka Sink");
+        fraudAlerts.sinkTo(alertsSink).name("[JAVA] Alerts Kafka Sink");
+        fraudReports.sinkTo(reportsSink).name("[JAVA] Reports Kafka Sink");
 
         // 9. Print for demo visibility
         fraudAlerts.print("ALERT");

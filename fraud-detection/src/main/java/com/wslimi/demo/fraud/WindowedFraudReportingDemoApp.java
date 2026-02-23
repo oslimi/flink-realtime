@@ -104,9 +104,7 @@ public class WindowedFraudReportingDemoApp {
         log.info("║  Using: Watermarks + Tumbling Windows                       ║");
         log.info("╚══════════════════════════════════════════════════════════════╝");
 
-        Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8084);
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(config);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(2);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -175,18 +173,18 @@ public class WindowedFraudReportingDemoApp {
         DataStream<Transaction> transactions = env
                 .fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source")
                 .map(json -> mapper.readValue(json, Transaction.class))
-                .name("JSON to Transaction");
+                .name("[JAVA] JSON to Transaction");
 
         DataStream<FraudAdvancedAlert> fraudAlerts = transactions
                 .keyBy(Transaction::srcAccountId)
                 .process(new AdvancedStatefulFraudDetectionProcessor())
-                .name("Stateful Fraud Detection");
+                .name("[JAVA] Stateful Fraud Detection");
 
         DataStream<FraudReport> fraudReports = fraudAlerts
                 .keyBy(alert -> alert.currentTransaction().srcAccountId())
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
                 .process(new WindowedFraudReportProcessor())
-                .name("Windowed Report Aggregation");
+                .name("[JAVA] Windowed Report Aggregation");
 
         DataStream<Row> fraudReportRows = fraudReports
                 .map(report -> Row.of(
@@ -200,12 +198,12 @@ public class WindowedFraudReportingDemoApp {
                         report.alertIds(),
                         report.summary()
                 ))
-                .name("FraudReport to Row");
+                .name("[JAVA] FraudReport to Row");
 
         // Outputs
-        fraudAlerts.sinkTo(alertsSink).name("Kafka Alerts Sink");
-        fraudReports.sinkTo(reportsSink).name("Kafka Reports Sink");
-        fraudReportRows.addSink(postgresSink).name("PostgreSQL Sink");
+        fraudAlerts.sinkTo(alertsSink).name("[JAVA] Kafka Alerts Sink");
+        fraudReports.sinkTo(reportsSink).name("[JAVA] Kafka Reports Sink");
+        fraudReportRows.addSink(postgresSink).name("[JAVA] PostgreSQL Sink");
 
         fraudAlerts.print("🚨 ALERT");
         fraudReports.print("📊 REPORT");
