@@ -50,11 +50,11 @@ public class NaiveFraudDetectionDemo {
 
         // 1. Create environment with Web UI on port 8085
         Configuration config = new Configuration();
-        config.set(RestOptions.PORT, 8085);
+        config.set(RestOptions.PORT, 8081);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
         env.setParallelism(2);
 
-        log.info("Flink Web UI: http://localhost:8085");
+        log.info("Flink Web UI: http://localhost:8081");
 
         ObjectMapper objectMapper = new ObjectMapper();
 
