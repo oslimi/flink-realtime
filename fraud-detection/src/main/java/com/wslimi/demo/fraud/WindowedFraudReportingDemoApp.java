@@ -186,7 +186,7 @@ public class WindowedFraudReportingDemoApp {
         DataStream<FraudReport> fraudReports = fraudAlerts
                 .assignTimestampsAndWatermarks(WatermarkStrategy
                         .<FraudAdvancedAlert>forMonotonousTimestamps()
-                        .withTimestampAssigner((event, ts) -> 500L))
+                        .withTimestampAssigner((event, timestamp) -> event.timestamp()))
                 .keyBy(alert -> alert.currentTransaction().srcAccountId())
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
                 .process(new WindowedFraudReportProcessor())
