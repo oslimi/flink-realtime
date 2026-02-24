@@ -31,60 +31,60 @@ import org.apache.flink.types.Row;
 
 /**
  * Windowed Fraud Reporting Demo
- *
+ * <p>
  * Demonstrates:
  * - Fraud detection with stateful processing
  * - Window aggregation with time windows
  * - Watermark strategy
  * - Multiple sinks (Kafka + PostgreSQL)
- *
+ * <p>
  * Architecture:
- *   Kafka (transactions)
- *        │
- *        ▼
- *   ┌──────────────────────┐
- *   │ Parse JSON → POJO    │
- *   └──────────────────────┘
- *        │
- *        ▼
- *   ┌──────────────────────┐
- *   │ keyBy(accountId)     │
- *   └──────────────────────┘
- *        │
- *        ▼
- *   ┌──────────────────────┐
- *   │ Fraud Detection      │ ← ValueState
- *   │ (Stateful)           │
- *   └──────────────────────┘
- *        │
- *        ├──────────────▶ Kafka (fraud-alerts)
- *        │
- *        ▼
- *   ┌──────────────────────┐
- *   │ keyBy(accountId)     │
- *   └──────────────────────┘
- *        │
- *        ▼
- *   ┌──────────────────────┐
- *   │ 5-Second Window      │
- *   │ (Tumbling)           │
- *   └──────────────────────┘
- *        │
- *        ▼
- *   ┌──────────────────────┐
- *   │ Aggregate Reports    │
- *   │ (Window Function)    │
- *   └──────────────────────┘
- *        │
- *        ├──────────────▶ Kafka (fraud-reports)
- *        │
- *        ▼
- *   ┌──────────────────────┐
- *   │ Convert to Row       │
- *   └──────────────────────┘
- *        │
- *        ▼
- *     PostgreSQL
+ * Kafka (transactions)
+ * │
+ * ▼
+ * ┌──────────────────────┐
+ * │ Parse JSON → POJO    │
+ * └──────────────────────┘
+ * │
+ * ▼
+ * ┌──────────────────────┐
+ * │ keyBy(accountId)     │
+ * └──────────────────────┘
+ * │
+ * ▼
+ * ┌──────────────────────┐
+ * │ Fraud Detection      │ ← ValueState
+ * │ (Stateful)           │
+ * └──────────────────────┘
+ * │
+ * ├──────────────▶ Kafka (fraud-alerts)
+ * │
+ * ▼
+ * ┌──────────────────────┐
+ * │ keyBy(accountId)     │
+ * └──────────────────────┘
+ * │
+ * ▼
+ * ┌──────────────────────┐
+ * │ 5-Second Window      │
+ * │ (Tumbling)           │
+ * └──────────────────────┘
+ * │
+ * ▼
+ * ┌──────────────────────┐
+ * │ Aggregate Reports    │
+ * │ (Window Function)    │
+ * └──────────────────────┘
+ * │
+ * ├──────────────▶ Kafka (fraud-reports)
+ * │
+ * ▼
+ * ┌──────────────────────┐
+ * │ Convert to Row       │
+ * └──────────────────────┘
+ * │
+ * ▼
+ * PostgreSQL
  */
 @Slf4j
 public class WindowedFraudReportingDemoApp {
@@ -142,12 +142,12 @@ public class WindowedFraudReportingDemoApp {
 
         SinkFunction<Row> postgresSink = JdbcSink.sink(
                 "INSERT INTO fraud_reports (report_id, report_timestamp, window_start, window_end, account_id, total_alerts, total_fraud_amount, alert_ids, summary) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                        "ON CONFLICT (report_id) DO UPDATE SET " +
-                        "total_alerts = EXCLUDED.total_alerts, " +
-                        "total_fraud_amount = EXCLUDED.total_fraud_amount, " +
-                        "alert_ids = EXCLUDED.alert_ids, " +
-                        "summary = EXCLUDED.summary",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                "ON CONFLICT (report_id) DO UPDATE SET " +
+                "total_alerts = EXCLUDED.total_alerts, " +
+                "total_fraud_amount = EXCLUDED.total_fraud_amount, " +
+                "alert_ids = EXCLUDED.alert_ids, " +
+                "summary = EXCLUDED.summary",
                 (statement, row) -> {
                     statement.setString(1, (String) row.getField(0));
                     statement.setLong(2, (Long) row.getField(1));
@@ -184,6 +184,9 @@ public class WindowedFraudReportingDemoApp {
                 .name("[JAVA] Stateful Fraud Detection");
 
         DataStream<FraudReport> fraudReports = fraudAlerts
+                .assignTimestampsAndWatermarks(WatermarkStrategy
+                        .<FraudAdvancedAlert>forMonotonousTimestamps()
+                        .withTimestampAssigner((event, ts) -> 500L))
                 .keyBy(alert -> alert.currentTransaction().srcAccountId())
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
                 .process(new WindowedFraudReportProcessor())

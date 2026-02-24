@@ -8,16 +8,19 @@ import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
-public class    AdvancedStatefulFraudDetectionProcessor extends KeyedProcessFunction<String, Transaction, FraudAdvancedAlert> {
+public class  AdvancedStatefulFraudDetectionProcessor extends ProcessFunction<Transaction, FraudAdvancedAlert> {
 
-    private static final double SMALL_THRESHOLD = 100.0;
-    private static final double LARGE_THRESHOLD = 50_000.0;
+
+    private static final double SMALL_THRESHOLD = 50;
+    private static final double LARGE_THRESHOLD = 100;
 
     private transient ValueState<Transaction> prevTxState;
 
@@ -33,7 +36,7 @@ public class    AdvancedStatefulFraudDetectionProcessor extends KeyedProcessFunc
     }
 
     @Override
-    public void processElement(Transaction tx, Context ctx, Collector<FraudAdvancedAlert> out) throws Exception {
+    public void processElement(Transaction tx, Context ctx, Collector<FraudAdvancedAlert> out) throws IOException {
         Transaction prevTx = prevTxState.value();
 
         if (prevTx != null && prevTx.amount() < SMALL_THRESHOLD && tx.amount() > LARGE_THRESHOLD) {
@@ -60,4 +63,6 @@ public class    AdvancedStatefulFraudDetectionProcessor extends KeyedProcessFunc
         prevTxState.clear();
         log.info("job ended");
     }
+
+
 }

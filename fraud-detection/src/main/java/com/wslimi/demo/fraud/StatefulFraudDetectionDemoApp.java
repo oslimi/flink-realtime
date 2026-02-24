@@ -27,7 +27,7 @@ public class StatefulFraudDetectionDemoApp {
     public static final String FRAUD_ALERTS_TOPIC = "fraud-alerts-stateful";
 
     public static void main(String[] args) throws Exception {
-        // 1. Create environment with Web UI on port 8085
+        // 1. Create environment with Web UI on port 8081
         Configuration config = new Configuration();
         config.set(RestOptions.PORT, 8081);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
