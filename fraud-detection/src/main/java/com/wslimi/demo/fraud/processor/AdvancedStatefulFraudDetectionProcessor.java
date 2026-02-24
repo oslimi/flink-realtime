@@ -20,7 +20,7 @@ public class  AdvancedStatefulFraudDetectionProcessor extends ProcessFunction<Tr
 
 
     private static final double SMALL_THRESHOLD = 50;
-    private static final double LARGE_THRESHOLD = 100;
+    private static final double LARGE_THRESHOLD = 51;
 
     private transient ValueState<Transaction> prevTxState;
 

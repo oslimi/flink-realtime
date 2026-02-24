@@ -32,6 +32,7 @@ CREATE TABLE fraud_reports (
     account_id VARCHAR(100) NOT NULL,
     total_alerts INTEGER NOT NULL,
     total_fraud_amount DECIMAL(15,2) NOT NULL,
+    alert_ids TEXT,
     summary TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

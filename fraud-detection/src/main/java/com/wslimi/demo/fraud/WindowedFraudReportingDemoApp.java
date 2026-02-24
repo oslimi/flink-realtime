@@ -141,8 +141,8 @@ public class WindowedFraudReportingDemoApp {
                 .build();
 
         SinkFunction<Row> postgresSink = JdbcSink.sink(
-                "INSERT INTO fraud_reports (report_id, report_timestamp, window_start, window_end, account_id, total_alerts, total_fraud_amount, alert_ids, summary) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                "INSERT INTO fraud_reports (report_id, report_timestamp, window_start, window_end, account_id, total_alerts, total_fraud_amount, summary) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
                 "ON CONFLICT (report_id) DO UPDATE SET " +
                 "total_alerts = EXCLUDED.total_alerts, " +
                 "total_fraud_amount = EXCLUDED.total_fraud_amount, " +
